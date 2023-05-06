@@ -1,5 +1,6 @@
 import math
 from collections import Counter, namedtuple
+import numpy as np
 
 """
 Refer to https://github.com/mozilla/sacreBLEU/blob/master/sacrebleu.py
@@ -163,20 +164,24 @@ if __name__ == "__main__":
     # corpus_bleu() in sacrebleu.py
     sys_len = 0  # c
     ref_len = 0  # r
-    correct = [0] * NGRAM_ORDER  # numerator of precision i+1
-    total = [0] * NGRAM_ORDER  # denominator of precision i+1
+    correct = np.array([0] * NGRAM_ORDER, dtype=int)  # numerator of precision i+1
+    total = np.array([0] * NGRAM_ORDER, dtype=int)  # denominator of precision i+1
 
     # Each image consists of a list of EQ classes.
     # Each EQ class is a pair of (GT superblock, prediction superblock).
     # Each superblock consists of a list of blocks.
-    image1 = [(["a1", "a2"], ["b1", "b2"]), ([], ["b3"])]  # Table 2
-    image2 = [(["caution1", "caution23"], ["caution123"])]  # Figure 4
+    # Table 3
+    image1 = [(["caution1", "caution23"], ["caution123"])]  # Figure 4
+    image2 = [(["a1", "a2"], ["b1", "b2"]), ([], ["b3"])]  # Table 2
     corpus = [image1, image2]
 
     for image in corpus:
-        for a, b in image:
-            HT = [Lookup(a1) for a1 in a]
-            MT = [Lookup(b1) for b1 in b]
+        correct1 = np.array([0] * NGRAM_ORDER, dtype=int) 
+        total1 = np.array([0] * NGRAM_ORDER, dtype=int) 
+        for sent in image:
+            gt_blocks, pred_blocks = sent
+            HT = [Lookup(blkname) for blkname in gt_blocks]
+            MT = [Lookup(blkname) for blkname in pred_blocks]
             ref_ngrams, closest_diff, closest_len, outlen = superblock_ref_stats(MT, HT)
             sys_len += outlen  # c
             ref_len += closest_len  # r
@@ -184,8 +189,13 @@ if __name__ == "__main__":
             sys_ngrams = superblock_extract_ngrams(MT)
             for ngram in sys_ngrams.keys():
                 n = len(ngram.split())
-                correct[n - 1] += min(sys_ngrams[ngram], ref_ngrams.get(ngram, 0))
-                total[n - 1] += sys_ngrams[ngram]
+                correct1[n-1] += min(sys_ngrams[ngram], ref_ngrams.get(ngram, 0))
+                total1[n-1] += sys_ngrams[ngram]
+        print(correct1)
+        print(total1)
+        print()
+        correct += correct1
+        total += total1
 
     bleu = compute_bleu(
         correct,
