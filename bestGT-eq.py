@@ -45,11 +45,22 @@ class EQBuilder:
         pos = set(loc for loc in members if loc > 0)
         return pos
 
-    def __init__(self, Annotators):
+    def __init__(self, Annotators, all_gt=True):
         """Annotators is a list of annotators. |Annotators| = K
         Each annotator is a dict from location id to its block tuple (loc2b)
         See the example in the main code below.
         """
+        if all_gt:
+            for loc2b in Annotators:
+                for loc in loc2b:
+                    assert(loc > 0)
+                for b in set(loc2b.values()):
+                    p = self._positive(b)
+                    assert len(p) == len(b)
+        else:
+            assert(len(Annotators)==2)
+            
+        self.all_gt = all_gt
         self.EQClasses = {}  # class id to EQ object
         self.loc2EQ = {}  # loc id (may be -ve) to EQ object
         self.eq_id = 0  # eq class id
@@ -119,17 +130,20 @@ class EQBuilder:
                 self._create(b)
 
     def all_combinatory(self):
+        if not self.all_gt:
+            return set()
+        
         EQList = list(self.EQClasses.values())
         blocks = set()
-        return self.recursive_combinatory(0, blocks, EQList)
+        return self._recursive_combinatory(0, blocks, EQList)
 
-    def recursive_combinatory(self, eq_idx, blocks, EQList):
+    def _recursive_combinatory(self, eq_idx, blocks, EQList):
         if eq_idx == len(EQList):
             yield blocks
         else:
             for sb in EQList[eq_idx].unique_sb:
                 blocks2 = blocks.union(sb)
-                yield from self.recursive_combinatory(eq_idx + 1, blocks2, EQList)
+                yield from self._recursive_combinatory(eq_idx + 1, blocks2, EQList)
 
 
 if __name__ == "__main__":
@@ -150,10 +164,13 @@ if __name__ == "__main__":
         for y in b:
             B_loc2b[y] = b
 
-    eqb = EQBuilder([A_loc2b, B_loc2b])
+    eqb = EQBuilder([A_loc2b, B_loc2b], all_gt=False)
     for eq in eqb.EQClasses.values():
         print(eq)
         print()
+    for ans in eqb.all_combinatory():
+        tmp = sorted(ans, key=lambda b: min(abs(loc) for loc in b))
+        print(tmp)
 
     print("=====")
     # A, B, C all GT block definitions. All positive locations.
