@@ -15,19 +15,10 @@ class EQ:
             blocks.add(b)
         return blocks
 
-    def _exist(self, sb2, unique_list):
-        """Check if sb2 is included in unique_list already."""
-        for sb1 in unique_list:
-            inter = sb1.intersection(sb2)
-            un = sb1.union(sb2)
-            if inter == un:
-                return True
-        return False
-
     def unique_me(self, superblocks):
         unique_sb = []
         for sb in superblocks:
-            if not self._exist(sb, unique_sb):
+            if sb not in unique_sb:
                 unique_sb.append(sb)
         return unique_sb
 
