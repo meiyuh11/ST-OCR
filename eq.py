@@ -65,10 +65,7 @@ class EQBuilder:
             set1 = self.EQClasses[id1].members  # all locations in id1
             merge_candidates = [id1]
             while True:
-                set2 = set()
-                for loc in set1:
-                    block2 = annotator2[loc]
-                    set2 = set2.union(block2)
+                set2 = set(loc2 for loc1 in set1 for loc2 in annotator2[loc1])
                 if set2 == set1:
                     break
 
